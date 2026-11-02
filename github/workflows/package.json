@@ -1,0 +1,14 @@
+{
+  "name": "nyxie-magical-pet",
+  "version": "1.0.0",
+  "description": "Compagnon magique virtuel 3D Nyxie",
+  "main": "index.html",
+  "scripts": {
+    "build": "mkdir -p www && cp index.html www/"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.7.0",
+    "@capacitor/cli": "^5.7.0",
+    "@capacitor/core": "^5.7.0"
+  }
+}
