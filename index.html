@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Nyxie - Compagnon Magique</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    * { user-select: none; -webkit-user-select: none; box-sizing: border-box; touch-action: manipulation; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #120826; font-family: 'Comfortaa', cursive, sans-serif; }
+    .glass-card { background: rgba(25, 14, 41, 0.78); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(192, 66, 254, 0.28); }
+    .btn-action { transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s; }
+    .btn-action:active { transform: scale(0.92); }
+    .stat-bar-inner { transition: width 0.4s ease-out; }
+  </style>
+</head>
+<body class="text-white flex flex-row">
+  <!-- Barre Latérale de Navigation -->
+  <aside class="w-20 bg-[#160b2e]/90 border-r border-purple-500/20 flex flex-col items-center py-4 justify-between z-20">
+    <div class="flex flex-col items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-2xl shadow-lg shadow-purple-900/50">🌙</div>
+      <button onclick="switchTab('accueil')" id="nav-accueil" class="w-12 h-12 rounded-xl bg-purple-600/40 text-purple-200 flex flex-col items-center justify-center text-xs font-bold border border-purple-400/40 shadow">🏠<span class="text-[9px]">Accueil</span></button>
+      <button onclick="switchTab('soins')" id="nav-soins" class="w-12 h-12 rounded-xl hover:bg-purple-900/30 text-purple-300 flex flex-col items-center justify-center text-xs font-bold">🌿<span class="text-[9px]">Soins</span></button>
+      <button onclick="switchTab('dressing')" id="nav-dressing" class="w-12 h-12 rounded-xl hover:bg-purple-900/30 text-purple-300 flex flex-col items-center justify-center text-xs font-bold">✨<span class="text-[9px]">Dressing</span></button>
+      <button onclick="switchTab('jeux')" id="nav-jeux" class="w-12 h-12 rounded-xl hover:bg-purple-900/30 text-purple-300 flex flex-col items-center justify-center text-xs font-bold">🎮<span class="text-[9px]">Jeux</span></button>
+      <button onclick="switchTab('discussion')" id="nav-discussion" class="w-12 h-12 rounded-xl hover:bg-purple-900/30 text-purple-300 flex flex-col items-center justify-center text-xs font-bold">💬<span class="text-[9px]">Parler</span></button>
+    </div>
+    <button onclick="toggleAudio()" id="btn-sound" class="w-10 h-10 rounded-xl bg-purple-950/60 text-purple-300 flex items-center justify-center text-base border border-purple-500/20">🔊</button>
+  </aside>
+
+  <!-- Zone Principale avec Canvas 3D -->
+  <main class="flex-1 relative flex flex-col justify-between p-4 overflow-hidden">
+    <canvas id="three-canvas" class="absolute inset-0 w-full h-full z-0"></canvas>
+
+    <!-- Barre Supérieure -->
+    <header class="relative z-10 flex justify-between items-center">
+      <div class="glass-card px-4 py-2 rounded-2xl flex items-center space-x-3">
+        <span class="text-xl">🐾</span>
+        <div>
+          <h1 class="text-sm font-bold text-purple-200">Nyxie ♡ <span class="text-xs font-normal text-purple-300/80">Compagnon Céleste</span></h1>
+          <p id="nyxie-sub" class="text-[10px] text-pink-300">Niveau 1 · Heureuse</p>
+        </div>
+      </div>
+      <div class="flex space-x-2">
+        <div class="glass-card px-3 py-1.5 rounded-xl flex items-center space-x-1.5 text-xs text-amber-300 border border-amber-400/30">
+          <span>🪙</span><span id="coins-val" class="font-bold">191</span>
+        </div>
+        <div class="glass-card px-3 py-1.5 rounded-xl flex items-center space-x-1.5 text-xs text-cyan-300 border border-cyan-400/30">
+          <span>💎</span><span id="gems-val" class="font-bold">12</span>
+        </div>
+        <div class="glass-card px-3 py-1.5 rounded-xl flex items-center space-x-1.5 text-xs text-pink-300 border border-pink-400/30">
+          <span>💖</span><span id="love-val" class="font-bold">43</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Bulle de Dialogue Nyxie -->
+    <div class="relative z-10 flex justify-center my-auto pointer-events-none">
+      <div id="dialogue-box" class="glass-card px-5 py-2.5 rounded-2xl text-center text-xs text-purple-100 max-w-md border border-purple-400/30 shadow-lg pointer-events-auto transform transition duration-300">
+        ✨ « Coucou ! Je suis tellement heureuse de te retrouver ! Un petit câlin ? »
+      </div>
+    </div>
+
+    <!-- Barre d'Actions Inférieure -->
+    <footer class="relative z-10 flex justify-center gap-3">
+      <button onclick="actionFeed()" class="btn-action glass-card px-4 py-3 rounded-2xl flex flex-col items-center min-w-[80px] border border-purple-400/30 hover:border-pink-400">
+        <span class="text-2xl mb-1">🍓</span>
+        <span class="text-xs font-bold text-pink-200">Nourrir</span>
+      </button>
+      <button onclick="actionPet()" class="btn-action glass-card px-4 py-3 rounded-2xl flex flex-col items-center min-w-[80px] border border-pink-400/40 bg-pink-900/20">
+        <span class="text-2xl mb-1">💖</span>
+        <span class="text-xs font-bold text-pink-300">Caresser</span>
+      </button>
+      <button onclick="actionPlay()" class="btn-action glass-card px-4 py-3 rounded-2xl flex flex-col items-center min-w-[80px] border border-purple-400/30 hover:border-amber-400">
+        <span class="text-2xl mb-1">✨</span>
+        <span class="text-xs font-bold text-amber-200">Jouer</span>
+      </button>
+      <button onclick="actionSleep()" class="btn-action glass-card px-4 py-3 rounded-2xl flex flex-col items-center min-w-[80px] border border-purple-400/30 hover:border-cyan-400">
+        <span class="text-2xl mb-1">💤</span>
+        <span class="text-xs font-bold text-cyan-200">Dormir</span>
+      </button>
+    </footer>
+  </main>
+
+  <!-- Panneau Latéral Droit : Statistiques Vitales -->
+  <aside class="w-64 bg-[#160b2e]/90 border-l border-purple-500/20 p-4 flex flex-col justify-between z-20">
+    <div>
+      <div class="flex items-center justify-between mb-4 pb-2 border-b border-purple-500/20">
+        <h2 class="text-xs font-bold text-purple-200 flex items-center gap-1.5">📈 <span>Statut Vital</span></h2>
+        <span id="vital-tag" class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold">Heureuse ✨</span>
+      </div>
+      <div class="space-y-4 text-xs">
+        <div>
+          <div class="flex justify-between mb-1 text-purple-300">
+            <span>🍓 Faim</span><span id="faim-text" class="font-bold text-amber-300">85%</span>
+          </div>
+          <div class="w-full h-2 bg-purple-950 rounded-full overflow-hidden border border-purple-500/30">
+            <div id="faim-bar" class="stat-bar-inner h-full bg-gradient-to-r from-amber-500 to-orange-400" style="width: 85%;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between mb-1 text-purple-300">
+            <span>⚡ Énergie</span><span id="energie-text" class="font-bold text-cyan-300">70%</span>
+          </div>
+          <div class="w-full h-2 bg-purple-950 rounded-full overflow-hidden border border-purple-500/30">
+            <div id="energie-bar" class="stat-bar-inner h-full bg-gradient-to-r from-cyan-400 to-blue-500" style="width: 70%;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between mb-1 text-purple-300">
+            <span>💖 Affection</span><span id="amour-text" class="font-bold text-pink-300">95%</span>
+          </div>
+          <div class="w-full h-2 bg-purple-950 rounded-full overflow-hidden border border-purple-500/30">
+            <div id="amour-bar" class="stat-bar-inner h-full bg-gradient-to-r from-pink-500 to-rose-400" style="width: 95%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="glass-card p-3 rounded-xl border border-purple-500/20 text-[11px] text-purple-300/80">
+      <p class="font-bold text-purple-200 mb-1">🌌 Météo Céleste :</p>
+      <p>Pluie d'étoiles filantes sucrées en cours (+20% gains XP).</p>
+    </div>
+  </aside>
+
+  <!-- Moteur 3D Three.js & Interactions -->
+  <script>
+    let scene, camera, renderer, nyxieMesh, eyeLeft, eyeRight, earsGroup;
+    let hunger = 85, energy = 70, love = 95, coins = 191;
+    let audioCtx = null, soundEnabled = true;
+
+    function playSound(freq, duration, type='sine') {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('btn-sound').innerText = soundEnabled ? '🔊' : '🔇';
+    }
+
+    function init3D() {
+      const canvas = document.getElementById('three-canvas');
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+      camera.position.set(0, 0.5, 4.5);
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(window.devicePixelRatio || 1);
+
+      // Lumières
+      const ambLight = new THREE.AmbientLight(0xd5b8ff, 1.2);
+      scene.add(ambLight);
+      const dirLight = new THREE.DirectionalLight(0xffb8eb, 1.5);
+      dirLight.position.set(3, 4, 3);
+      scene.add(dirLight);
+
+      // Étoiles d'arrière-plan
+      const starGeo = new THREE.BufferGeometry();
+      const starCoords = [];
+      for (let i = 0; i < 200; i++) {
+        starCoords.push((Math.random() - 0.5) * 20, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 15 - 5);
+      }
+      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
+      const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, transparent: true, opacity: 0.8 });
+      scene.add(new THREE.Points(starGeo, starMat));
+
+      // Créature 3D Nyxie
+      nyxieMesh = new THREE.Group();
+      
+      // Corps axolotl tout mignon
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffe2f4, roughness: 0.35, metalness: 0.05 });
+      const bodyGeo = new THREE.SphereGeometry(0.85, 32, 32);
+      bodyGeo.scale(1, 1.05, 0.95);
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      nyxieMesh.add(body);
+
+      // Ventre rose pâle
+      const bellyMat = new THREE.MeshStandardMaterial({ color: 0xffc4eb, roughness: 0.4 });
+      const bellyGeo = new THREE.SphereGeometry(0.55, 24, 24);
+      bellyGeo.scale(1, 1.05, 0.3);
+      const belly = new THREE.Mesh(bellyGeo, bellyMat);
+      belly.position.set(0, -0.15, 0.7);
+      nyxieMesh.add(belly);
+
+      // Yeux grands et mignons
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1f0b38 });
+      const eyeGlintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const eyeGeo = new THREE.SphereGeometry(0.18, 16, 16);
+      
+      eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeLeft.position.set(-0.35, 0.15, 0.75);
+      const glintL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), eyeGlintMat);
+      glintL.position.set(-0.3, 0.22, 0.88);
+      nyxieMesh.add(eyeLeft);
+      nyxieMesh.add(glintL);
+
+      eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeRight.position.set(0.35, 0.15, 0.75);
+      const glintR = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), eyeGlintMat);
+      glintR.position.set(0.4, 0.22, 0.88);
+      nyxieMesh.add(eyeRight);
+      nyxieMesh.add(glintR);
+
+      // Joues roses
+      const blushMat = new THREE.MeshBasicMaterial({ color: 0xff70a6, transparent: true, opacity: 0.6 });
+      const blushGeo = new THREE.SphereGeometry(0.12, 12, 12);
+      blushGeo.scale(1.2, 0.6, 0.2);
+      const blushL = new THREE.Mesh(blushGeo, blushMat);
+      blushL.position.set(-0.48, -0.05, 0.75);
+      const blushR = new THREE.Mesh(blushGeo, blushMat);
+      blushR.position.set(0.48, -0.05, 0.75);
+      nyxieMesh.add(blushL);
+      nyxieMesh.add(blushR);
+
+      // Branchies / Cornes magiques (axolotl)
+      earsGroup = new THREE.Group();
+      const earMat = new THREE.MeshStandardMaterial({ color: 0xdb2777, roughness: 0.4 });
+      [-1, 1].forEach(side => {
+        for (let i = 0; i < 3; i++) {
+          const earGeo = new THREE.CylinderGeometry(0.04, 0.08, 0.45, 12);
+          const ear = new THREE.Mesh(earGeo, earMat);
+          ear.position.set(side * (0.85 + i*0.08), 0.35 - i*0.2, 0.1);
+          ear.rotation.z = side * (-0.7 - i*0.2);
+          ear.rotation.x = -0.15;
+          earsGroup.add(ear);
+        }
+      });
+      nyxieMesh.add(earsGroup);
+
+      nyxieMesh.position.y = -0.2;
+      scene.add(nyxieMesh);
+
+      window.addEventListener('resize', onResize);
+      animate();
+    }
+
+    function onResize() {
+      const canvas = document.getElementById('three-canvas');
+      if (!canvas) return;
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+      if (nyxieMesh) {
+        nyxieMesh.position.y = -0.2 + Math.sin(t * 2.2) * 0.08;
+        nyxieMesh.rotation.y = Math.sin(t * 1.2) * 0.12;
+      }
+      renderer.render(scene, camera);
+    }
+
+    function setDialogue(msg) {
+      const el = document.getElementById('dialogue-box');
+      el.innerText = msg;
+      el.style.transform = 'scale(1.08)';
+      setTimeout(() => el.style.transform = 'scale(1)', 250);
+    }
+
+    function updateStats() {
+      document.getElementById('faim-bar').style.width = hunger + '%';
+      document.getElementById('faim-text').innerText = hunger + '%';
+      document.getElementById('energie-bar').style.width = energy + '%';
+      document.getElementById('energie-text').innerText = energy + '%';
+      document.getElementById('amour-bar').style.width = love + '%';
+      document.getElementById('amour-text').innerText = love + '%';
+      document.getElementById('coins-val').innerText = coins;
+    }
+
+    function actionFeed() {
+      hunger = Math.min(100, hunger + 15);
+      coins += 2;
+      playSound(587.33, 0.15);
+      setTimeout(() => playSound(880, 0.2), 100);
+      setDialogue('🍓 Miam miam ! Une délicieuse baie étoilée ! Merci !');
+      updateStats();
+    }
+
+    function actionPet() {
+      love = Math.min(100, love + 10);
+      playSound(659.25, 0.2);
+      setTimeout(() => playSound(987.77, 0.25), 120);
+      setDialogue('💖 Ronron... Tes caresses sont tellement douces !');
+      updateStats();
+    }
+
+    function actionPlay() {
+      energy = Math.max(10, energy - 10);
+      coins += 5;
+      playSound(783.99, 0.15);
+      setTimeout(() => playSound(1046.5, 0.2), 120);
+      setDialogue('✨ Youpi ! Regarde comme je sautille haut ! (+5 pièces)');
+      updateStats();
+    }
+
+    function actionSleep() {
+      energy = Math.min(100, energy + 30);
+      playSound(440, 0.3);
+      setDialogue('💤 Bonne nuit sous les étoiles... Zzz...');
+      updateStats();
+    }
+
+    function switchTab(name) {
+      playSound(523.25, 0.1);
+      setDialogue('✨ Onglet ' + name.toUpperCase() + ' activé ! Nyxie est avec toi !');
+    }
+
+    window.onload = init3D;
+  </script>
+</body>
+</html>
