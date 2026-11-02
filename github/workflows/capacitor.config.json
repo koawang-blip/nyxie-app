@@ -1,0 +1,13 @@
+{
+  "appId": "com.lumina.nyxie",
+  "appName": "Nyxie",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#190e29",
+    "allowMixedContent": true
+  }
+}
